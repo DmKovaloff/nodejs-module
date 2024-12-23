@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 
-import { read, write } from "./fs.service";
+import { ApiError } from "./errors/apiError";
+import { userRouter } from "./routers/user.router";
 
 dotenv.config();
 
@@ -10,85 +11,19 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/users", async (req: Request, res: Response) => {
-  try {
-    const users = await read();
-    res.json(users);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+app.use("/users", userRouter);
+
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught Exception", error);
+  process.exit(1);
 });
 
-app.post("/users", async (req: Request, res: Response) => {
-  try {
-    const users = await read();
-    const newUser = {
-      id: users.length ? users[users.length - 1].id + 1 : 1,
-      name: req.body.name,
-      email: req.body.email,
-      password: req.body.password,
-    };
-    users.push(newUser);
-    await write(users);
-    res.status(201).json(newUser);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.get("/users/:userId", async (req: Request, res: Response) => {
-  try {
-    const users = await read();
-    const user = await users.find((user) => user.id === +req.params.userId);
-    res.json(user);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-app.delete(
-  "/users/:userId",
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const users = await read();
-      const index = users.findIndex(
-        (user) => user.id === Number(req.params.userId),
-      );
-
-      if (index === -1) {
-        return res.status(404).json("User not found");
-      }
-      users.splice(index, 1);
-      await write(users);
-      res.sendStatus(204);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
-  },
-);
-
-app.put(
-  "/users/:userId",
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const users = await read();
-      const index = users.findIndex(
-        (user) => user.id === Number(req.params.userId),
-      );
-
-      if (index === -1) {
-        return res.status(404).json("User not found");
-      }
-      const user = users[index];
-      user.name = req.body.name;
-      user.email = req.body.email;
-      user.password = req.body.password;
-
-      await write(users);
-      res.status(201).json(user);
-    } catch (e) {
-      res.status(500).json({ error: e.message });
-    }
+app.use(
+  "*",
+  (error: ApiError, req: Request, res: Response, next: NextFunction) => {
+    const status = error.status ?? 500;
+    const message = error.message ?? "Something went wrong";
+    res.status(status).json({ status, message });
   },
 );
 
