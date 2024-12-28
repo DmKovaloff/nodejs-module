@@ -1,10 +1,9 @@
-import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
+import mongoose from "mongoose";
 
+import { config } from "./config/config";
 import { ApiError } from "./errors/apiError";
 import { userRouter } from "./routers/user.router";
-
-dotenv.config();
 
 const app = express();
 
@@ -27,13 +26,7 @@ app.use(
   },
 );
 
-// CRUD
-// Create - POST
-// Read - GET
-// Update - PUT
-// Delete - Delete
-
-const port = process.env.PORT;
-app.listen(3000, () => {
-  console.log(`Server has benn started on port ${port}`);
+app.listen(config.port, async () => {
+  await mongoose.connect(config.mongoUri);
+  console.log(`Server has benn started on port ${config.port}`);
 });
