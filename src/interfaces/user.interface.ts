@@ -1,10 +1,12 @@
+import { RoleEnum } from "../enums/role.enum";
+
 export interface IUser {
   _id: string;
   name: string;
   email: string;
   age: number;
   password: string;
-  role: number;
+  role: RoleEnum;
   phone?: string;
   isDeleted: boolean;
   isVerified: boolean;
@@ -18,3 +20,4 @@ export type IUserCreateDto = Pick<
 >;
 
 export type IUserUpdateDto = Pick<IUser, "name" | "age" | "phone">;
+export type ILogin = Pick<IUser, "email" | "password">;
