@@ -1,18 +1,21 @@
-import { config } from "../config/config";
-import { EmailTypeEnum } from "../enums/email-type.enum";
-import { ApiError } from "../errors/apiError";
-import { ITokenPair, ITokenPayload } from "../interfaces/token.interface";
-import { ILogin, IUser, IUserCreateDto } from "../interfaces/user.interface";
-import { tokenRepository } from "../repositories/token.repository";
-import { userRepository } from "../repositories/user.repository";
-import { emailService } from "./email.service";
-import { passwordService } from "./password.service";
-import { tokenService } from "./token.service";
-import { userService } from "./user.service";
+import {config} from "../config/config";
+import {ActionTokenTypeEnum} from "../enums/action-token-type.enum";
+import {EmailTypeEnum} from "../enums/email-type.enum";
+import {ApiError} from "../errors/apiError";
+import {ITokenPair, ITokenPayload} from "../interfaces/token.interface";
+import {IForgotPassword, IForgotPasswordSet, ILogin, IUser, IUserCreateDto,} from "../interfaces/user.interface";
+import {actionTokenRepository} from "../repositories/action-token.repository";
+import {tokenRepository} from "../repositories/token.repository";
+import {userRepository} from "../repositories/user.repository";
+import {emailService} from "./email.service";
+import {passwordService} from "./password.service";
+import {tokenService} from "./token.service";
+import {userService} from "./user.service";
+import {IVerifyToken} from "../interfaces/action-token.interface";
 
 class AuthService {
   public async signUp(
-    dto: IUserCreateDto,
+      dto: IUserCreateDto,
   ): Promise<{ user: IUser; tokens: ITokenPair }> {
     await userService.isEmailUnique(dto.email);
     const password = await passwordService.hashPassword(dto.password);
@@ -22,27 +25,37 @@ class AuthService {
       role: user.role,
     });
     await tokenRepository.create({ ...tokens, _userId: user._id });
+
+    const actionToken = tokenService.generateActionTokens(
+        { userId: user._id, role: user.role },
+        ActionTokenTypeEnum.EMAIL_VERIFICATION,
+    );
+    await actionTokenRepository.create({
+      type: ActionTokenTypeEnum.EMAIL_VERIFICATION,
+      _userId: user._id,
+      token: actionToken,
+    });
     await emailService.sendEmail(
-      EmailTypeEnum.WELCOME,
-      "makovdilev@gmail.com",
-      { name: user.name, frontUrl: config.frontUrl },
+        EmailTypeEnum.WELCOME,
+        user.email,
+        { name: user.name, frontUrl: config.frontUrl, actionToken },
     );
     return { user, tokens };
   }
 
   public async signIn(
-    dto: ILogin,
+      dto: ILogin,
   ): Promise<{ user: IUser; tokens: ITokenPair }> {
     const user = await userRepository.getByEmail(dto.email);
     if (!user) {
-      throw new ApiError("User not create (signIn-auth.srvs.ts)", 401);
+      throw new ApiError("Incorrect email or password", 401);
     }
     const isPasswordCorrect = await passwordService.comparePassword(
-      dto.password,
-      user.password,
+        dto.password,
+        user.password,
     );
     if (!isPasswordCorrect) {
-      throw new ApiError("Incorrect email or pass", 401);
+      throw new ApiError("Incorrect email or password", 401);
     }
     const tokens = tokenService.generateTokens({
       userId: user._id,
@@ -53,8 +66,8 @@ class AuthService {
   }
 
   public async refresh(
-    tokenPayload: ITokenPayload,
-    refreshToken: string,
+      tokenPayload: ITokenPayload,
+      refreshToken: string,
   ): Promise<ITokenPair> {
     await tokenRepository.deleteOneByParams({ refreshToken });
     const tokens = tokenService.generateTokens({
@@ -66,24 +79,66 @@ class AuthService {
   }
 
   public async logout(
-    tokenPayload: ITokenPayload,
-    tokenId: string,
+      tokenPayload: ITokenPayload,
+      tokenId: string,
   ): Promise<void> {
     const user = await userRepository.getById(tokenPayload.userId);
     await tokenRepository.deleteOneByParams({ _id: tokenId });
-    await emailService.sendEmail(EmailTypeEnum.LOGOUT, "makovdilev@gmail.com", {
-      name: user.name,
-      frontUrl: config.frontUrl,
-    });
+    await emailService.sendEmail(
+        EmailTypeEnum.LOGOUT,
+        user.email,
+        {
+          name: user.name,
+          frontUrl: config.frontUrl,
+        },
+    );
   }
 
   public async logoutAll(tokenPayload: ITokenPayload): Promise<void> {
     const user = await userRepository.getById(tokenPayload.userId);
     await tokenRepository.deleteAllByParams({ _userId: tokenPayload.userId });
-    await emailService.sendEmail(EmailTypeEnum.LOGOUT, user.email, {
+    await emailService.sendEmail(
+        EmailTypeEnum.LOGOUT,
+        user.email,
+        {
+          name: user.name,
+          frontUrl: config.frontUrl,
+        },
+    );
+  }
+
+  public async forgotPassword(dto: IForgotPassword): Promise<void> {
+    const user = await userRepository.getByEmail(dto.email);
+    if (!user) return;
+
+    const token = tokenService.generateActionTokens(
+        { userId: user._id, role: user.role },
+        ActionTokenTypeEnum.FORGOT_PASSWORD,
+    );
+    await actionTokenRepository.create({
+      type: ActionTokenTypeEnum.FORGOT_PASSWORD,
+      _userId: user._id,
+      token,
+    });
+    await emailService.sendEmail(EmailTypeEnum.FORGOT_PASSWORD, dto.email, {
       name: user.name,
       frontUrl: config.frontUrl,
+      actionToken: token,
     });
+  }
+
+  public async forgotPasswordSet(dto: IForgotPasswordSet, tokenPayload: ITokenPayload): Promise<void> {
+    const password = await passwordService.hashPassword(dto.password);
+    await userRepository.updateById(tokenPayload.userId, { password });
+
+    await Promise.all([
+      actionTokenRepository.deleteOneByParams({ token: dto.token }),
+      tokenRepository.deleteAllByParams({ _userId: tokenPayload.userId }),
+    ]);
+  }
+  public async verify(dto: IVerifyToken, tokenPayload: ITokenPayload): Promise<void> {
+    await userRepository.updateById(tokenPayload.userId, { isVerified: true });
+    await actionTokenRepository.deleteOneByParams({ token: dto.token });
   }
 }
 

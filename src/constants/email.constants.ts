@@ -7,14 +7,14 @@ export const emailConstants = {
   },
   [EmailTypeEnum.FORGOT_PASSWORD]: {
     subject: "Forgot password subject",
-    template: "Forgot password",
+    template: "forgot-password",
   },
   [EmailTypeEnum.OLD_VISIT]: {
     subject: "Old visit subject",
-    template: "Old visit",
+    template: "old-visit",
   },
   [EmailTypeEnum.LOGOUT]: {
     subject: "Logout subject",
-    template: "Logout",
+    template: "logout",
   },
 };

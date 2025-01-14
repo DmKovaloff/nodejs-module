@@ -1,7 +1,6 @@
 import {
   IUser,
   IUserCreateDto,
-  IUserUpdateDto,
 } from "../interfaces/user.interface";
 import { User } from "../models/user.model";
 
@@ -22,7 +21,7 @@ class UserRepository {
     return await User.findOne({ email });
   }
 
-  public async updateById(userId: string, dto: IUserUpdateDto): Promise<IUser> {
+  public async updateById(userId: string, dto: Partial<IUser>): Promise<IUser> {
     return await User.findByIdAndUpdate(userId, dto, { new: true });
   }
 
