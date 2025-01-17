@@ -4,6 +4,7 @@ import { config } from "./config/config";
 import { ApiError } from "./errors/apiError";
 import { userRouter } from "./routers/user.router";
 import { authRouter } from "./routers/auth.router";
+import {cronRunner} from "./crons";
 
 
 const app = express();
@@ -31,4 +32,5 @@ app.use(
 app.listen(config.port, async () => {
   await mongoose.connect(config.mongoUri);
   console.log(`Server has benn started on port ${config.port}`);
+  await cronRunner();
 });

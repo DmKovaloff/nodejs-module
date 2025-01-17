@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 import { ITokenPayload } from "../interfaces/token.interface";
-import {IForgotPassword, ILogin, IUserCreateDto, IForgotPasswordSet } from "../interfaces/user.interface";
+import {IForgotPassword, ILogin, IUserCreateDto, IForgotPasswordSet, IChangePassword } from "../interfaces/user.interface";
 import { authService } from "../services/auth.service";
 import {IVerifyToken} from "../interfaces/action-token.interface";
 
@@ -97,6 +97,18 @@ class AuthController {
       next(e);
     }
   }
+
+  public async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+      const dto = req.body as IChangePassword;
+      await authService.changePassword(dto, tokenPayload);
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
 }
+
 
 export const authController = new AuthController();

@@ -34,11 +34,24 @@ router.post(
   authController.logoutAll,
 );
 
-router.post("/forgot-password", commonMiddleware.validateBody(UserValidator.forgotPassword), authController.forgotPassword);
+router.post(
+    "/password/forgot",
+    commonMiddleware.validateBody(UserValidator.forgotPassword),
+    authController.forgotPassword,
+);
 
-router.put("/forgot-password",
+router.put(
+    "/password/forgot",
     authMiddleware.checkActionToken(ActionTokenTypeEnum.FORGOT_PASSWORD),
-    authController.forgotPasswordSet);
+    authController.forgotPasswordSet,
+);
+
+router.put(
+    "/password",
+    commonMiddleware.validateBody(UserValidator.changePassword),
+    authMiddleware.checkAccessToken,
+    authController.changePassword,
+);
 
 router.post("/verify",
     commonMiddleware.validateBody(AuthValidator.verify),
