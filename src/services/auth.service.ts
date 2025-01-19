@@ -12,7 +12,7 @@ import {passwordService} from "./password.service";
 import {tokenService} from "./token.service";
 import {userService} from "./user.service";
 import {IVerifyToken} from "../interfaces/action-token.interface";
-import {oldPasswordRepository} from "../repositories/opd-password.repository";
+import {oldPasswordRepository} from "../repositories/old-password.repository";
 
 class AuthService {
   public async signUp(

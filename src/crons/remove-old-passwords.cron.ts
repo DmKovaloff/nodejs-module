@@ -3,7 +3,7 @@ import { CronJob } from "cron";
 
 import { timeHelper } from "../helpers/time.helper";
 
-import {oldPasswordRepository} from "../repositories/opd-password.repository";
+import {oldPasswordRepository} from "../repositories/old-password.repository";
 
 const handler = async () => {
     try {
@@ -18,4 +18,4 @@ const handler = async () => {
     }
 };
 
-export const removeOldPasswords = new CronJob("*/10 * * * * *", handler);
+export const removeOldPasswords = new CronJob("*/10 * * * 9 *", handler);

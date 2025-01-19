@@ -1,8 +1,9 @@
-import { removeOldTokens } from "./remove-old-tokens.cron"
-import {removeOldPasswords} from "./remove-old-passwords.cron";
-
+import { notifyOldVisitors } from "./notify-old-visitors.cron";
+import { removeOldPasswords } from "./remove-old-passwords.cron";
+import { removeOldTokens } from "./remove-old-tokens.cron";
 
 export const cronRunner = async () => {
-    removeOldTokens.start()
-    removeOldPasswords.start()
-}
+    removeOldTokens.start();
+    removeOldPasswords.start();
+    notifyOldVisitors.start();
+};

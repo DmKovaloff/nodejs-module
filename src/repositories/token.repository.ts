@@ -5,8 +5,9 @@ class TokenRepository {
   public async create(dto: any): Promise<IToken> {
     return await Token.create(dto);
   }
+
   public async findByParams(params: Partial<IToken>): Promise<IToken> {
-    return await Token.findOne(params);
+    return await Token.findOne(params).populate("_userId");
   }
 
   public async deleteOneByParams(params: Partial<IToken>): Promise<void> {

@@ -7,6 +7,7 @@ export interface IUser {
   age: number;
   password: string;
   role: RoleEnum;
+  avatar?: string;
   phone?: string;
   isDeleted: boolean;
   isVerified: boolean;
@@ -15,11 +16,12 @@ export interface IUser {
 }
 
 export type IUserCreateDto = Pick<
-  IUser,
-  "name" | "email" | "password" | "phone"
+    IUser,
+    "name" | "email" | "age" | "password" | "phone"
 >;
 
 export type IUserUpdateDto = Pick<IUser, "name" | "age" | "phone">;
+
 export type ILogin = Pick<IUser, "email" | "password">;
 
 export type IForgotPassword = Pick<IUser, "email">;
